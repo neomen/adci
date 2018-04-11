@@ -1,0 +1,98 @@
+server {
+  listen 80;
+  server_name {{.ServerName}}.{{.DomainName}} www.{{.ServerName}}.{{.DomainName}};
+  root {{.root}}/web;
+
+  access_log off;
+  fastcgi_param SCRIPT_NAME $fastcgi_script_name;	
+  index index.html index.htm index.php;
+ 
+  access_log {{.root}}/log/{{.server_name}}.access.log;
+  error_log {{.root}}/log/{{.server_name}}.error.log;
+ 
+  location = /favicon.ico {
+    log_not_found off;
+    access_log off;
+  }
+  location = /robots.txt {
+    allow all;
+    log_not_found off;
+    access_log off;
+  }
+
+  location ~ \..*/.*\.php$ {
+    return 403;
+  }
+
+  # Block access to "hidden" files and directories whose names begin with a
+  # period. This includes directories used by version control systems such
+  # as Subversion or Git to store control files.
+  location ~ (^|/)\. {
+    return 403;
+  }
+
+  location / {
+    try_files $uri @rewrite;
+  }
+
+  location @rewrite {
+    rewrite ^ /index.php;
+  }
+
+  location ~ \.php$ {
+    set $no_cache "";
+    if ($request_method !~ ^(GET|HEAD)$) {
+      set $no_cache "1";
+    }        
+
+    if ($no_cache = "1") {
+      add_header Set-Cookie "_mcnc=1; Max-Age=2; Path=/";
+      add_header X-Microcachable "0";
+    }
+
+    if ($http_cookie ~ SESS) {
+      set $no_cache "1";
+    }                
+
+    fastcgi_no_cache $no_cache;
+    fastcgi_cache_bypass $no_cache;
+    fastcgi_cache microcache;
+    fastcgi_cache_key $server_name|$request_uri;
+    fastcgi_cache_valid 404 30m;
+    fastcgi_cache_valid 200 1s;
+    fastcgi_max_temp_file_size 1M;
+    fastcgi_cache_use_stale updating;
+    fastcgi_pass unix:/var/run/php5-fpm.sock;        
+    fastcgi_pass_header Set-Cookie;
+    fastcgi_pass_header Cookie;
+    fastcgi_ignore_headers Cache-Control Expires Set-Cookie;
+
+    fastcgi_index index.php;
+    include fastcgi_params;
+  }
+
+  ## Drupal 7 generated image handling, i.e., imagecache in core. See:
+  ## https://drupal.org/node/371374
+  location ~* /sites/.*/files/styles/ {
+    access_log off;
+    expires 30d;
+    try_files $uri @rewrite;
+  }
+  
+  # Catch image styles for D7 too.
+  location ~ ^/sites/.*/files/styles/ {
+    try_files $uri @rewrite;
+  }
+
+  ## Replicate the Apache <FilesMatch> directive of Drupal standard
+  ## .htaccess. Disable access to any code files. Return a 404 to curtail
+  ## information disclosure. Hide also the text files.
+  location ~* ^(?:.+\.(?:htaccess|make|txt|log|engine|inc|info|install|module|profile|po|sh|.*sql|theme|tpl(?:\.php)?|xtmpl)|code-style\.pl|/Entries.*|/Repository|/Root|/Tag|/Template)$ {
+    return 404;
+  }
+
+  location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+    expires max;
+    log_not_found off;
+  }
+}
