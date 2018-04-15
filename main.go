@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os/exec"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/tucnak/climax"
 )
 
@@ -31,7 +33,12 @@ func runcmd(cmd string) {
 }
 
 func main() {
-	cli := climax.New("ADCI")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	cli := climax.New("adci")
 	cli.Brief = "adci clients server managment app"
 	cli.Version = "beta 2.0"
 

@@ -47,6 +47,6 @@ func deleteUser(userName string) bool {
 	go deleteSystemUser(userName, wg)
 	go deleteMysqlUser(userName, wg)
 	wg.Wait()
-
+	//@TODO print user banner
 	return false
 }

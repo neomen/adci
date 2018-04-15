@@ -1,14 +1,14 @@
 server {
   listen 80;
-  server_name {{.ServerName}}.{{.DomainName}} www.{{.ServerName}}.{{.DomainName}};
+  server_name {{.HostName}}.{{.DomainName}} www.{{.HostName}}.{{.DomainName}};
   root {{.root}}/web;
 
   access_log off;
   fastcgi_param SCRIPT_NAME $fastcgi_script_name;	
   index index.html index.htm index.php;
  
-  access_log {{.root}}/log/{{.server_name}}.access.log;
-  error_log {{.root}}/log/{{.server_name}}.error.log;
+  access_log {{.root}}/log/{{.HostName}}.access.log;
+  error_log {{.root}}/log/{{.HostName}}.error.log;
  
   location = /favicon.ico {
     log_not_found off;
